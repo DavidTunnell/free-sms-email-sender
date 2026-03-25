@@ -89,6 +89,6 @@ const EMAIL_HTML = `
 `.trim();
 
 const SMS_CONTENT =
-  'Panda Hill here! \uD83D\uDC3C Join our NEW loyalty program & get a FREE appetizer. Visit pandahilltx.com or ask on your next visit! Reply STOP to opt out';
+  'Panda Hill here! \uD83D\uDC3C Earn Hearts on every order & unlock FREE food! Sign up here: https://bit.ly/4bOqXAP Reply STOP to opt out';
 
 module.exports = { EMAIL_SUBJECT, EMAIL_HTML, SMS_CONTENT };
