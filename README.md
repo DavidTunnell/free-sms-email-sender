@@ -60,6 +60,33 @@ You'll see the interactive menu:
 
 **Start with option 1** — it parses and previews the CSV without touching Brevo.
 
+## Test Mode (Send to Yourself)
+
+Before blasting ~1,099 customers, verify everything works by sending to just yourself.
+
+**1. Add your info to `.env`:**
+
+```
+TEST_EMAIL=your@email.com
+TEST_PHONE=+12105551234
+TEST_FIRST_NAME=YourName
+```
+
+**2. Run test mode:**
+
+```bash
+npm start
+# Choose option 6 → Test mode (send to yourself)
+# Then choose: 1 (email only), 2 (SMS only), or 3 (both)
+```
+
+This uses Brevo's **Transactional Email API** — no lists created, no campaigns left behind, instant delivery. SMS uses the same transactional API as the full campaign.
+
+**3. Verify delivery:**
+- Check your email inbox for the full HTML loyalty invitation
+- Check your phone for the SMS with the opt-out footer
+- Once both look good, swap in the real `data/export.csv` and run the full campaign
+
 ## Brevo Setup Checklist
 
 Before sending campaigns, complete these steps in your Brevo dashboard:
@@ -67,7 +94,7 @@ Before sending campaigns, complete these steps in your Brevo dashboard:
 - [ ] Generate an API key (Settings → SMTP & API → API Keys)
 - [ ] Verify your sender email address (Settings → Senders & IPs)
 - [ ] Register SMS sender name "PandaHill" (Settings → SMS → Senders)
-- [ ] Purchase SMS credits if sending texts (~$0.011/msg, ~$10 for 872 messages)
+- [ ] Purchase SMS credits if sending texts (~$0.011/msg, ~$10 for 872 messages) — [Buy credits here](https://app.brevo.com/billing/addon/customize/sms)
 
 ## Project Structure
 
@@ -79,8 +106,10 @@ Before sending campaigns, complete these steps in your Brevo dashboard:
 │   ├── parseCSV.js               # CSV parsing, cleaning, deduplication
 │   ├── brevoClient.js            # Brevo SDK wrapper (contacts, email, SMS)
 │   ├── importContacts.js         # List creation + batch contact import
-│   ├── sendEmail.js              # Email campaign HTML template + send
+│   ├── sendEmail.js              # Email campaign orchestration
 │   ├── sendSMS.js                # SMS loop with rate limiting + logging
+│   ├── templates.js              # Shared email HTML + SMS message templates
+│   ├── testMode.js               # Test mode — send to yourself before full campaign
 │   └── index.js                  # Interactive CLI entry point
 ├── test/
 │   ├── fixtures/test-export.csv  # Test fixture with edge cases
@@ -184,6 +213,9 @@ Tests cover: phone number normalization, name cleaning, spend parsing, CSV dedup
 |----------|----------|-------------|
 | `BREVO_API_KEY` | Yes | Your Brevo API key |
 | `BREVO_SENDER_EMAIL` | No | Sender email (default: `pandahilltx@gmail.com`) |
+| `TEST_EMAIL` | No | Your email for test mode (option 6) |
+| `TEST_PHONE` | No | Your phone in E.164 format (e.g. `+12105551234`) for test mode |
+| `TEST_FIRST_NAME` | No | Your first name for email personalization in test mode |
 
 ## Dependencies
 
