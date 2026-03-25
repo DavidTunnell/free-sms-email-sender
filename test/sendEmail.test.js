@@ -5,11 +5,10 @@ const assert = require('node:assert/strict');
 process.env.BREVO_API_KEY = 'test-api-key-12345';
 
 describe('sendEmail', () => {
-  // Load the module to access its constants
-  // We need to read the file directly since EMAIL_HTML and EMAIL_SUBJECT aren't exported
+  // Templates are now in a shared module
   const fs = require('fs');
   const path = require('path');
-  const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'sendEmail.js'), 'utf-8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'templates.js'), 'utf-8');
 
   describe('email subject line', () => {
     it('contains panda emoji', () => {

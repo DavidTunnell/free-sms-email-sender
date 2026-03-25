@@ -8,7 +8,7 @@ process.env.BREVO_API_KEY = 'test-api-key-12345';
 
 describe('sendSMS', () => {
   describe('SMS content', () => {
-    const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'sendSMS.js'), 'utf-8');
+    const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'templates.js'), 'utf-8');
 
     it('contains the panda emoji', () => {
       assert.ok(source.includes('\\uD83D\\uDC3C') || source.includes('\uD83D\uDC3C'));

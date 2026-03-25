@@ -6,7 +6,7 @@ const config = {
   emailListName: 'Panda Hill - Email Contacts',
   smsListName: 'Panda Hill - SMS Contacts',
   senderName: 'Panda Hill',
-  senderEmail: process.env.BREVO_SENDER_EMAIL || 'pandahilltx@gmail.com',
+  senderEmail: process.env.BREVO_SENDER_EMAIL || 'davidtunnell9@gmail.com',
   smsSender: 'PandaHill',
   smsDelayMs: 100,
   logsDir: './logs',

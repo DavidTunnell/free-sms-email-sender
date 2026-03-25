@@ -2,9 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { sendTransactionalSMS } = require('./brevoClient');
 const config = require('./config');
-
-const SMS_CONTENT =
-  'Panda Hill here! \uD83D\uDC3C Join our NEW loyalty program & get a FREE appetizer. Visit pandahilltx.com or ask on your next visit! Reply STOP to opt out';
+const { SMS_CONTENT } = require('./templates');
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
