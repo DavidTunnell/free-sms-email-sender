@@ -27,7 +27,7 @@ function parseSpend(raw) {
   return parseFloat(String(raw).replace(/[$,]/g, '')) || 0;
 }
 
-function parseCSV(csvPath) {
+function parseCSV(csvPath, excludedEmails = new Set()) {
   const fullPath = path.resolve(csvPath);
   const fileContent = fs.readFileSync(fullPath, 'utf-8');
 
@@ -48,6 +48,14 @@ function parseCSV(csvPath) {
     squareId: (r['Square Customer ID'] || '').trim(),
   }));
 
+  const filtered = excludedEmails.size > 0
+    ? contacts.filter((c) => !(c.email && excludedEmails.has(c.email)))
+    : contacts;
+
+  return deduplicateContacts(filtered);
+}
+
+function deduplicateContacts(contacts) {
   // Deduplicate by email — keep highest transaction count
   const emailMap = new Map();
   for (const c of contacts) {
@@ -111,4 +119,4 @@ function printSummary({ emailContacts, smsContacts, allContacts }) {
   });
 }
 
-module.exports = { parseCSV, printSummary, cleanPhone, cleanFirstName, parseSpend };
+module.exports = { parseCSV, deduplicateContacts, printSummary, cleanPhone, cleanFirstName, parseSpend };

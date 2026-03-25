@@ -11,7 +11,6 @@ const {
   createContactAttribute,
   importContacts,
   createAndSendEmailCampaign,
-  sendTransactionalSMS,
 } = require('../src/brevoClient');
 
 describe('brevoClient', () => {
@@ -88,21 +87,6 @@ describe('brevoClient', () => {
       // Verify the function signature is correct
       assert.equal(typeof createContactAttribute, 'function');
       assert.equal(createContactAttribute.length, 3);
-    });
-  });
-
-  describe('SMS payload structure', () => {
-    it('constructs correct SMS payload shape', () => {
-      const sendSms = new brevo.SendTransacSms();
-      sendSms.sender = 'PandaHill';
-      sendSms.recipient = '+12105551001';
-      sendSms.content = 'Test message';
-      sendSms.type = 'marketing';
-
-      assert.equal(sendSms.sender, 'PandaHill');
-      assert.equal(sendSms.recipient, '+12105551001');
-      assert.equal(sendSms.content, 'Test message');
-      assert.equal(sendSms.type, 'marketing');
     });
   });
 

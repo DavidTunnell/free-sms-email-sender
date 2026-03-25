@@ -1,5 +1,5 @@
 const brevo = require('@getbrevo/brevo');
-const { sendTransactionalSMS } = require('./brevoClient');
+const { sendSMS: sendTwilioSMS } = require('./twilioClient');
 const config = require('./config');
 const { EMAIL_SUBJECT, EMAIL_HTML, SMS_CONTENT } = require('./templates');
 
@@ -43,7 +43,7 @@ async function sendTestEmail(contact) {
 }
 
 async function sendTestSMS(contact) {
-  const result = await sendTransactionalSMS(contact.phone, SMS_CONTENT, config.smsSender);
+  const result = await sendTwilioSMS(contact.phone, SMS_CONTENT);
   return result;
 }
 

@@ -10,6 +10,8 @@
   "dependencies": {
     "@getbrevo/brevo": "^2.0.0",
     "csv-parse": "^5.5.0",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "square": "^44.0.1",
+    "twilio": "^5.13.1"
   }
 }

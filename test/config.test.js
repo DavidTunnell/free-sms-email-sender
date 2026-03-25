@@ -33,9 +33,10 @@ describe('config', () => {
     assert.ok(config.senderEmail.includes('@'));
   });
 
-  it('has SMS sender name within 11 char limit', () => {
-    assert.ok(config.smsSender.length <= 11, `SMS sender "${config.smsSender}" exceeds 11 chars`);
-    assert.ok(/^[a-zA-Z0-9]+$/.test(config.smsSender), 'SMS sender must be alphanumeric');
+  it('has Twilio config fields defined', () => {
+    assert.ok('twilioAccountSid' in config, 'config should have twilioAccountSid');
+    assert.ok('twilioAuthToken' in config, 'config should have twilioAuthToken');
+    assert.ok('twilioPhoneNumber' in config, 'config should have twilioPhoneNumber');
   });
 
   it('has a reasonable SMS delay', () => {
@@ -45,5 +46,19 @@ describe('config', () => {
 
   it('has a logs directory configured', () => {
     assert.ok(config.logsDir);
+  });
+
+  it('has Square config fields defined', () => {
+    assert.ok('squareAccessToken' in config, 'config should have squareAccessToken');
+    assert.ok('squareEnvironment' in config, 'config should have squareEnvironment');
+    assert.ok('exclusionCsvPath' in config, 'config should have exclusionCsvPath');
+  });
+
+  it('defaults squareEnvironment to production', () => {
+    assert.equal(config.squareEnvironment, 'production');
+  });
+
+  it('defaults exclusionCsvPath to ./data/exclusion.csv', () => {
+    assert.equal(config.exclusionCsvPath, './data/exclusion.csv');
   });
 });
