@@ -4,6 +4,8 @@ const { runImport } = require('./importContacts');
 const { runEmailCampaign } = require('./sendEmail');
 const { runSMSCampaign } = require('./sendSMS');
 const { runTestMode } = require('./testMode');
+const { pullFromSquare } = require('./pullFromSquare');
+const { parseExclusionCSV } = require('./parseExclusion');
 const config = require('./config');
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -25,7 +27,8 @@ let smsListId = null;
 function ensureParsed() {
   if (!parsedData) {
     console.log('\nParsing CSV...');
-    parsedData = parseCSV(config.csvPath);
+    const excludedEmails = parseExclusionCSV(config.exclusionCsvPath);
+    parsedData = parseCSV(config.csvPath, excludedEmails);
   }
   return parsedData;
 }
@@ -105,6 +108,31 @@ async function menuRunAll() {
   await menuSendSMS();
 }
 
+async function menuPullFromSquare() {
+  try {
+    parsedData = await pullFromSquare();
+    printSummary(parsedData);
+  } catch (err) {
+    console.error('\nSquare pull failed:', err.message);
+    if (err.message.includes('Square credentials')) {
+      console.error('Set SQUARE_ACCESS_TOKEN in your .env file.');
+    }
+  }
+}
+
+async function menuSquareRunAll() {
+  console.log('\n=== Running full pipeline: Square Pull → Import → Email → SMS ===');
+  if (!(await confirm('This will pull from Square, import contacts, and send both campaigns. Continue?'))) {
+    console.log('Cancelled.');
+    return;
+  }
+  await menuPullFromSquare();
+  if (!parsedData) return;
+  await menuImport();
+  if (emailListId) await menuSendEmail();
+  await menuSendSMS();
+}
+
 async function main() {
   console.log('=== Panda Hill — Brevo Loyalty Campaign ===\n');
 
@@ -116,6 +144,8 @@ async function main() {
     console.log('4. Send SMS campaign');
     console.log('5. Run all (import → email → SMS)');
     console.log('6. Test mode (send to yourself)');
+    console.log('7. Pull customers from Square API');
+    console.log('8. Square → Run all (pull → import → email → SMS)');
     console.log('0. Exit\n');
 
     const choice = await ask('Choose an option: ');
@@ -127,6 +157,8 @@ async function main() {
       case '4': await menuSendSMS(); break;
       case '5': await menuRunAll(); break;
       case '6': await runTestMode(rl); break;
+      case '7': await menuPullFromSquare(); break;
+      case '8': await menuSquareRunAll(); break;
       case '0':
         console.log('Goodbye!');
         rl.close();

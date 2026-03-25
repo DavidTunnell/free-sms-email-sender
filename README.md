@@ -93,8 +93,9 @@ Before sending campaigns, complete these steps in your Brevo dashboard:
 
 - [ ] Generate an API key (Settings → SMTP & API → API Keys)
 - [ ] Verify your sender email address (Settings → Senders & IPs)
-- [ ] Register SMS sender name "PandaHill" (Settings → SMS → Senders)
-- [ ] Purchase SMS credits if sending texts (~$0.011/msg, ~$10 for 872 messages) — [Buy credits here](https://app.brevo.com/billing/addon/customize/sms)
+- [ ] Create a [Twilio account](https://www.twilio.com) (free trial includes ~$15 credit)
+- [ ] Get a Twilio phone number from the console (~$1.15/mo)
+- [ ] Add `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` to `.env`
 
 ## Project Structure
 
@@ -170,11 +171,12 @@ Visit pandahilltx.com or ask on your next visit! Reply STOP to opt out
 
 ## SMS Details
 
-- Uses Brevo's **Transactional SMS API** (pay-per-message, ~$0.011/msg in the US)
+- Uses **Twilio** for SMS delivery (US carriers block alphanumeric sender IDs used by Brevo)
+- Twilio provides a real US phone number as the sender (~$1.15/mo + ~$0.0079/msg)
 - 100ms delay between sends to respect rate limits
 - Exponential backoff on 429 (rate limit) responses
 - Every send result is logged to `logs/sms-results.json`
-- Estimated cost for ~872 messages: **~$10**
+- Estimated cost for ~872 messages: **~$7**
 
 ## Safety Features
 
@@ -211,8 +213,11 @@ Tests cover: phone number normalization, name cleaning, spend parsing, CSV dedup
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `BREVO_API_KEY` | Yes | Your Brevo API key |
-| `BREVO_SENDER_EMAIL` | No | Sender email (default: `pandahilltx@gmail.com`) |
+| `BREVO_API_KEY` | Yes | Your Brevo API key (for email + contacts) |
+| `TWILIO_ACCOUNT_SID` | Yes | Twilio Account SID (for SMS) |
+| `TWILIO_AUTH_TOKEN` | Yes | Twilio Auth Token (for SMS) |
+| `TWILIO_PHONE_NUMBER` | Yes | Twilio phone number in E.164 format (for SMS sender) |
+| `BREVO_SENDER_EMAIL` | No | Sender email (default: `davidtunnell9@gmail.com`) |
 | `TEST_EMAIL` | No | Your email for test mode (option 6) |
 | `TEST_PHONE` | No | Your phone in E.164 format (e.g. `+12105551234`) for test mode |
 | `TEST_FIRST_NAME` | No | Your first name for email personalization in test mode |
@@ -221,7 +226,8 @@ Tests cover: phone number normalization, name cleaning, spend parsing, CSV dedup
 
 | Package | Purpose |
 |---------|---------|
-| `@getbrevo/brevo` | Brevo API SDK (contacts, email campaigns, SMS) |
+| `@getbrevo/brevo` | Brevo API SDK (contacts, email campaigns) |
+| `twilio` | Twilio SDK for SMS delivery |
 | `csv-parse` | CSV parsing with column headers |
 | `dotenv` | Load `.env` file into `process.env` |
 

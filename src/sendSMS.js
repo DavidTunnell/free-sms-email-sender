@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { sendTransactionalSMS } = require('./brevoClient');
+const { sendSMS } = require('./twilioClient');
 const config = require('./config');
 const { SMS_CONTENT } = require('./templates');
 
@@ -10,7 +10,7 @@ function sleep(ms) {
 
 async function runSMSCampaign(smsContacts) {
   console.log(`\nSending SMS to ${smsContacts.length} contacts...`);
-  console.log(`  Sender: ${config.smsSender}`);
+  console.log(`  Sender: ${config.twilioPhoneNumber}`);
   console.log(`  Message (${SMS_CONTENT.length} chars): ${SMS_CONTENT}`);
   console.log('');
 
@@ -23,7 +23,7 @@ async function runSMSCampaign(smsContacts) {
     const phone = contact.phone;
 
     try {
-      const result = await sendTransactionalSMS(phone, SMS_CONTENT, config.smsSender);
+      const result = await sendSMS(phone, SMS_CONTENT);
       successCount++;
       results.push({ phone, status: 'success', messageId: result.messageId || null });
 
@@ -42,7 +42,7 @@ async function runSMSCampaign(smsContacts) {
         await sleep(backoff);
         // Retry this contact
         try {
-          const retryResult = await sendTransactionalSMS(phone, SMS_CONTENT, config.smsSender);
+          const retryResult = await sendSMS(phone, SMS_CONTENT);
           results[results.length - 1] = { phone, status: 'success', messageId: retryResult.messageId || null };
           successCount++;
           failCount--;

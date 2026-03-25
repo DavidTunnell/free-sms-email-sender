@@ -7,9 +7,14 @@ const config = {
   smsListName: 'Panda Hill - SMS Contacts',
   senderName: 'Panda Hill',
   senderEmail: process.env.BREVO_SENDER_EMAIL || 'davidtunnell9@gmail.com',
-  smsSender: 'PandaHill',
+  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
+  twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
   smsDelayMs: 100,
   logsDir: './logs',
+  squareAccessToken: process.env.SQUARE_ACCESS_TOKEN,
+  squareEnvironment: process.env.SQUARE_ENVIRONMENT || 'production',
+  exclusionCsvPath: process.env.EXCLUSION_CSV_PATH || './data/exclusion.csv',
 };
 
 if (!config.brevoApiKey || config.brevoApiKey === 'your-brevo-api-key-here') {

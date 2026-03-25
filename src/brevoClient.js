@@ -9,9 +9,6 @@ contactsApi.setApiKey(brevo.ContactsApiApiKeys.apiKey, config.brevoApiKey);
 const emailCampaignsApi = new brevo.EmailCampaignsApi();
 emailCampaignsApi.setApiKey(brevo.EmailCampaignsApiApiKeys.apiKey, config.brevoApiKey);
 
-// --- Transactional SMS API ---
-const transactionalSmsApi = new brevo.TransactionalSMSApi();
-transactionalSmsApi.setApiKey(brevo.TransactionalSMSApiApiKeys.apiKey, config.brevoApiKey);
 
 async function createContactList(listName, folderId = 1) {
   const createList = new brevo.CreateList();
@@ -80,21 +77,9 @@ async function createAndSendEmailCampaign(listId, subject, htmlContent, senderNa
   return campaignId;
 }
 
-async function sendTransactionalSMS(phone, content, sender) {
-  const sendSms = new brevo.SendTransacSms();
-  sendSms.sender = sender;
-  sendSms.recipient = phone;
-  sendSms.content = content;
-  sendSms.type = 'marketing';
-
-  const result = await transactionalSmsApi.sendTransacSms(sendSms);
-  return result;
-}
-
 module.exports = {
   createContactList,
   createContactAttribute,
   importContacts,
   createAndSendEmailCampaign,
-  sendTransactionalSMS,
 };
