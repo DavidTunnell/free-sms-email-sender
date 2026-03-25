@@ -14,8 +14,22 @@ async function createContactList(listName, folderId = 1) {
   const createList = new brevo.CreateList();
   createList.name = listName;
   createList.folderId = folderId;
-  const result = await contactsApi.createList(createList);
-  return result.id;
+  try {
+    const result = await contactsApi.createList(createList);
+    const id = (result.body && result.body.id) || result.id;
+    console.log(`  Created list: ${listName} (ID: ${id})`);
+    return id;
+  } catch (err) {
+    // List already exists — find its ID
+    const listsResult = await contactsApi.getLists({ limit: 50 });
+    const lists = (listsResult.body && listsResult.body.lists) || listsResult.lists || [];
+    const existing = lists.find(l => l.name === listName);
+    if (existing) {
+      console.log(`  List already exists: ${listName} (ID: ${existing.id})`);
+      return existing.id;
+    }
+    throw err;
+  }
 }
 
 async function createContactAttribute(category, name, type) {
@@ -25,7 +39,8 @@ async function createContactAttribute(category, name, type) {
     await contactsApi.createAttribute(category, name, attr);
     console.log(`  Created attribute: ${name}`);
   } catch (err) {
-    if (err.status === 400 && err.body && err.body.message && err.body.message.includes('already exists')) {
+    const msg = (err.body && err.body.message) || (err.message) || '';
+    if (msg.includes('already exists') || msg.includes('must be unique')) {
       console.log(`  Attribute already exists: ${name}`);
     } else {
       throw err;
@@ -67,7 +82,7 @@ async function createAndSendEmailCampaign(listId, subject, htmlContent, senderNa
 
   // Create the campaign
   const createResult = await emailCampaignsApi.createEmailCampaign(emailCampaign);
-  const campaignId = createResult.id;
+  const campaignId = (createResult.body && createResult.body.id) || createResult.id;
   console.log(`  Email campaign created with ID: ${campaignId}`);
 
   // Send it immediately

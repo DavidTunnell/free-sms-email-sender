@@ -1,15 +1,15 @@
 # Free SMS & Email Sender
 
-A Node.js CLI tool that uses the [Brevo](https://www.brevo.com) (formerly Sendinblue) API to import contacts from a Square customer export and send personalized email and SMS marketing campaigns.
-
-Built for **Panda Hill** (Asian Comfort Food, Castroville TX) to launch their loyalty program by reaching ~1,099 past Square customers with a personalized invitation and free appetizer offer.
+A Node.js CLI tool that uses the [Brevo](https://www.brevo.com) API and [Twilio](https://www.twilio.com) to import contacts from a Square customer export and send personalized email and SMS marketing campaigns.
 
 ## What It Does
 
 1. **Parses** a Square customer CSV export — cleans phone numbers, deduplicates contacts, normalizes data
-2. **Imports** contacts into Brevo with custom attributes (transaction history, lifetime spend, Square ID)
-3. **Sends an email campaign** to contacts with email addresses (~505 unique) via Brevo's Campaign API
-4. **Sends SMS messages** to contacts with phone numbers (~872 unique) via Brevo's Transactional SMS API
+2. **Excludes** contacts who have already been emailed (via an exclusion CSV)
+3. **Imports** contacts into Brevo with custom attributes (transaction history, lifetime spend, Square ID)
+4. **Sends email campaigns** to contacts with email addresses via Brevo's Campaign API
+5. **Sends SMS messages** to contacts with phone numbers via Twilio
+6. **Pulls customers directly** from the Square API as an alternative to CSV import
 
 All operations are behind an interactive CLI menu with dry-run preview and confirmation prompts before any sends.
 
@@ -17,7 +17,8 @@ All operations are behind an interactive CLI menu with dry-run preview and confi
 
 - **Node.js 18+**
 - A free [Brevo account](https://www.brevo.com)
-- A Square customer export CSV (placed in `data/export.csv`)
+- A [Twilio account](https://www.twilio.com) with a US phone number (for SMS)
+- A Square customer export CSV
 
 ## Quick Start
 
@@ -29,14 +30,9 @@ npm install
 
 ### Configure
 
-1. Copy your Square customer export to `data/export.csv`
-2. Set your Brevo API key in `.env`:
-
-```
-BREVO_API_KEY=your-brevo-api-key-here
-```
-
-**How to get your API key:** Brevo dashboard → Settings → SMTP & API → API Keys → Generate a new API key
+1. Copy `.env.example` to `.env` and fill in your API keys
+2. Place your Square customer export at `data/export.csv`
+3. (Optional) Place an exclusion CSV at `data/exclusion.csv` to skip already-contacted customers
 
 ### Run
 
@@ -47,22 +43,23 @@ npm start
 You'll see the interactive menu:
 
 ```
-=== Panda Hill — Brevo Loyalty Campaign ===
-
 --- Menu ---
 1. Parse & preview CSV data (dry run)
 2. Import contacts into Brevo
 3. Send email campaign
 4. Send SMS campaign
 5. Run all (import → email → SMS)
+6. Test mode (send to yourself)
+7. Pull customers from Square API
+8. Square → Run all (pull → import → email → SMS)
 0. Exit
 ```
 
-**Start with option 1** — it parses and previews the CSV without touching Brevo.
+**Start with option 1** — it parses and previews the CSV without touching any APIs.
 
 ## Test Mode (Send to Yourself)
 
-Before blasting ~1,099 customers, verify everything works by sending to just yourself.
+Before sending to your full contact list, verify everything works by sending to just yourself.
 
 **1. Add your info to `.env`:**
 
@@ -80,48 +77,70 @@ npm start
 # Then choose: 1 (email only), 2 (SMS only), or 3 (both)
 ```
 
-This uses Brevo's **Transactional Email API** — no lists created, no campaigns left behind, instant delivery. SMS uses the same transactional API as the full campaign.
+This uses Brevo's **Transactional Email API** — no lists created, no campaigns left behind, instant delivery. SMS uses Twilio's API directly.
 
 **3. Verify delivery:**
-- Check your email inbox for the full HTML loyalty invitation
-- Check your phone for the SMS with the opt-out footer
-- Once both look good, swap in the real `data/export.csv` and run the full campaign
+- Check your email inbox for the full HTML email
+- Check your phone for the SMS
+- Once both look good, run the full campaign
 
-## Brevo Setup Checklist
+## Exclusion Filtering
 
-Before sending campaigns, complete these steps in your Brevo dashboard:
+To avoid sending to customers who have already been contacted:
 
-- [ ] Generate an API key (Settings → SMTP & API → API Keys)
-- [ ] Verify your sender email address (Settings → Senders & IPs)
-- [ ] Create a [Twilio account](https://www.twilio.com) (free trial includes ~$15 credit)
-- [ ] Get a Twilio phone number from the console (~$1.15/mo)
-- [ ] Add `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` to `.env`
+1. Export the recipient list from your previous campaign (e.g., from Square Marketing)
+2. Place it at `data/exclusion.csv`
+3. The CSV just needs an `Email Address` column (also accepts `Email` or `email`)
+
+The tool automatically filters out excluded emails before deduplication and import.
+
+## Setup Checklist
+
+Before sending campaigns, complete these steps:
+
+- [ ] Generate a Brevo API key (Settings → SMTP & API → API Keys)
+- [ ] Verify your sender email address in Brevo (Settings → Senders & IPs)
+- [ ] Create a [Twilio account](https://www.twilio.com) and get a US phone number
+- [ ] Complete Twilio A2P 10DLC registration (required for US SMS — see below)
+- [ ] Add all API keys to `.env`
+- [ ] Place your Square customer export at `data/export.csv`
+
+### Twilio A2P 10DLC Registration (Required for US SMS)
+
+US carriers require A2P 10DLC registration before sending marketing SMS. In the Twilio Console:
+
+1. **Register your brand** — Messaging → Compliance → A2P Brand Registration
+2. **Create a campaign** — describe your use case (e.g., "loyalty program marketing")
+3. **Attach your phone number** to the campaign
+4. Cost: ~$4 brand registration + ~$15 campaign vetting + ~$2/mo
+
+If you have an EIN, register as "Low Volume Standard." Otherwise, use "Sole Proprietor" registration. New EINs may take up to 2 weeks to propagate in the IRS system before Twilio can verify them.
 
 ## Project Structure
 
 ```
-├── .env                          # BREVO_API_KEY (not committed)
+├── .env.example                  # Template for environment variables
 ├── package.json
 ├── src/
 │   ├── config.js                 # Environment config and constants
 │   ├── parseCSV.js               # CSV parsing, cleaning, deduplication
-│   ├── brevoClient.js            # Brevo SDK wrapper (contacts, email, SMS)
+│   ├── parseExclusion.js         # Exclusion list loading
+│   ├── brevoClient.js            # Brevo SDK wrapper (contacts, email campaigns)
+│   ├── twilioClient.js           # Twilio SDK wrapper (SMS)
 │   ├── importContacts.js         # List creation + batch contact import
 │   ├── sendEmail.js              # Email campaign orchestration
 │   ├── sendSMS.js                # SMS loop with rate limiting + logging
-│   ├── templates.js              # Shared email HTML + SMS message templates
+│   ├── templates.js              # Email HTML + SMS message templates
 │   ├── testMode.js               # Test mode — send to yourself before full campaign
+│   ├── squareClient.js           # Square API client for pulling customers
+│   ├── pullFromSquare.js         # Square → contact pipeline with exclusion
 │   └── index.js                  # Interactive CLI entry point
 ├── test/
-│   ├── fixtures/test-export.csv  # Test fixture with edge cases
-│   ├── parseCSV.test.js          # 29 tests — parsing, cleaning, dedup
-│   ├── brevoClient.test.js       # 7 tests — payload construction
-│   ├── importContacts.test.js    # 10 tests — module structure, attributes
-│   ├── sendEmail.test.js         # 13 tests — HTML content, merge tags
-│   ├── sendSMS.test.js           # 8 tests — message content, logging
-│   └── config.test.js            # 9 tests — config validation
+│   ├── fixtures/                 # Test CSV fixtures with edge cases
+│   └── *.test.js                 # Test files for each module
 ├── data/
-│   └── export.csv                # Square CSV goes here (not committed)
+│   ├── export.csv                # Square CSV goes here (not committed)
+│   └── exclusion.csv             # Already-contacted emails (optional, not committed)
 └── logs/
     └── sms-results.json          # SMS send results (generated at runtime)
 ```
@@ -144,43 +163,33 @@ The tool expects a Square customer export with these columns:
 
 - Phone numbers: strips leading `'` character, normalizes to `+1XXXXXXXXXX` (E.164)
 - Email addresses: lowercased and trimmed
-- First names that are actually phone numbers (e.g., `2105551234`) are blanked
-- Formatted phone-number names (e.g., `(210) 555-1234`) are also blanked
+- First names that are actually phone numbers are blanked
 - Duplicate emails/phones: keeps the record with the highest transaction count
 - Dollar-formatted spend values (`$120.50`) are parsed to floats
 
-## Campaign Content
+## Email & SMS Details
 
 ### Email
 
-- **Subject:** 🐼 You're invited! Join Panda Hill Rewards & get FREE food
-- **From:** Panda Hill (configurable sender email)
-- **Personalization:** Uses Brevo `{{contact.FIRSTNAME}}` merge tags
-- **Template:** Mobile-friendly, table-based HTML with inline CSS
-- **Highlights:** Free appetizer, points system, birthday rewards, CTA button
+- Sent via Brevo's Email Campaign API
+- Uses `{{contact.FIRSTNAME}}` merge tags for personalization
+- Mobile-friendly, table-based HTML with inline CSS
+- Brevo automatically appends unsubscribe link
+- Configurable sender name and email
 
 ### SMS
 
-```
-Panda Hill here! 🐼 Join our NEW loyalty program & get a FREE appetizer.
-Visit pandahilltx.com or ask on your next visit! Reply STOP to opt out
-```
-
-- 144 characters (under the 160-char single-segment limit)
-- Includes opt-out language
-
-## SMS Details
-
-- Uses **Twilio** for SMS delivery (US carriers block alphanumeric sender IDs used by Brevo)
-- Twilio provides a real US phone number as the sender (~$1.15/mo + ~$0.0079/msg)
+- Sent via **Twilio** (US carriers block alphanumeric sender IDs used by Brevo)
+- Uses a real US phone number as the sender
 - 100ms delay between sends to respect rate limits
 - Exponential backoff on 429 (rate limit) responses
 - Every send result is logged to `logs/sms-results.json`
-- Estimated cost for ~872 messages: **~$7**
+- Includes STOP opt-out language
 
 ## Safety Features
 
-- **Dry run first:** Option 1 parses the CSV and prints counts without calling Brevo
+- **Dry run first:** Option 1 parses the CSV and prints counts without calling any APIs
+- **Exclusion filtering:** Skip contacts who have already been emailed
 - **Confirmation prompts:** Every send action requires `y/n` confirmation
 - **Idempotent imports:** `updateExistingContacts: true` prevents duplicates on re-run
 - **SMS logging:** Every SMS result (success/failure) logged with phone number
@@ -193,33 +202,22 @@ Visit pandahilltx.com or ask on your next visit! Reply STOP to opt out
 npm test
 ```
 
-Runs 76 tests across 6 test files using Node's built-in test runner:
-
-```
-✔ config (9 tests)
-✔ parseCSV — cleanPhone (7 tests)
-✔ parseCSV — cleanFirstName (6 tests)
-✔ parseCSV — parseSpend (4 tests)
-✔ parseCSV — full CSV integration (11 tests)
-✔ brevoClient — payload construction (7 tests)
-✔ importContacts — structure & attributes (10 tests)
-✔ sendEmail — content & HTML (13 tests)
-✔ sendSMS — content & logging (8 tests)
-```
-
-Tests cover: phone number normalization, name cleaning, spend parsing, CSV deduplication, Brevo payload shape, import attribute definitions, email HTML content/merge tags, SMS character limits, and log file writing.
+Tests cover: phone number normalization, name cleaning, spend parsing, CSV deduplication, Brevo payload shape, import attribute definitions, email HTML content/merge tags, SMS character limits, log file writing, exclusion filtering, Square API client, and test mode.
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `BREVO_API_KEY` | Yes | Your Brevo API key (for email + contacts) |
-| `TWILIO_ACCOUNT_SID` | Yes | Twilio Account SID (for SMS) |
-| `TWILIO_AUTH_TOKEN` | Yes | Twilio Auth Token (for SMS) |
-| `TWILIO_PHONE_NUMBER` | Yes | Twilio phone number in E.164 format (for SMS sender) |
-| `BREVO_SENDER_EMAIL` | No | Sender email (default: `davidtunnell9@gmail.com`) |
+| `TWILIO_ACCOUNT_SID` | For SMS | Twilio Account SID |
+| `TWILIO_AUTH_TOKEN` | For SMS | Twilio Auth Token |
+| `TWILIO_PHONE_NUMBER` | For SMS | Twilio phone number in E.164 format |
+| `BREVO_SENDER_EMAIL` | No | Sender email (must be verified in Brevo) |
+| `SQUARE_ACCESS_TOKEN` | No | Square API token (for option 7/8 — pull from Square API) |
+| `SQUARE_ENVIRONMENT` | No | `production` (default) or `sandbox` |
+| `EXCLUSION_CSV_PATH` | No | Path to exclusion CSV (default: `./data/exclusion.csv`) |
 | `TEST_EMAIL` | No | Your email for test mode (option 6) |
-| `TEST_PHONE` | No | Your phone in E.164 format (e.g. `+12105551234`) for test mode |
+| `TEST_PHONE` | No | Your phone in E.164 format for test mode |
 | `TEST_FIRST_NAME` | No | Your first name for email personalization in test mode |
 
 ## Dependencies
