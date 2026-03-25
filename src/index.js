@@ -3,6 +3,7 @@ const { parseCSV, printSummary } = require('./parseCSV');
 const { runImport } = require('./importContacts');
 const { runEmailCampaign } = require('./sendEmail');
 const { runSMSCampaign } = require('./sendSMS');
+const { runTestMode } = require('./testMode');
 const config = require('./config');
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -114,6 +115,7 @@ async function main() {
     console.log('3. Send email campaign');
     console.log('4. Send SMS campaign');
     console.log('5. Run all (import → email → SMS)');
+    console.log('6. Test mode (send to yourself)');
     console.log('0. Exit\n');
 
     const choice = await ask('Choose an option: ');
@@ -124,6 +126,7 @@ async function main() {
       case '3': await menuSendEmail(); break;
       case '4': await menuSendSMS(); break;
       case '5': await menuRunAll(); break;
+      case '6': await runTestMode(rl); break;
       case '0':
         console.log('Goodbye!');
         rl.close();
