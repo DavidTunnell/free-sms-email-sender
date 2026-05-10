@@ -89,6 +89,6 @@ const EMAIL_HTML = `
 `.trim();
 
 const SMS_CONTENT =
-  'Panda Hill here! \uD83D\uDC3C Earn Hearts on every order & unlock FREE food! Sign up here: https://bit.ly/4bOqXAP Reply STOP to opt out';
+  'Panda Hill here! \uD83D\uDC3C Earn Hearts on every order & unlock FREE food! Sign up here: https://www.pandahilltx.com/free-food Reply STOP to opt out';
 
 module.exports = { EMAIL_SUBJECT, EMAIL_HTML, SMS_CONTENT };
